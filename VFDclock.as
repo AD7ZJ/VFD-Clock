@@ -67,9 +67,7 @@ __pidataBANK0:
 	retlw	0FEh
 	retlw	0DEh
 	global	_numDisplay
-	global	_sec_count
-	global	_sec_elapsed
-	global	_tripped
+	global	_seconds
 	global	_INTCON
 _INTCON	set	11
 	global	_PIR1
@@ -124,13 +122,7 @@ __pbssCOMMON:
 _numDisplay:
        ds      2
 
-_sec_count:
-       ds      1
-
-_sec_elapsed:
-       ds      1
-
-_tripped:
+_seconds:
        ds      1
 
 psect	dataBANK0,class=BANK0,space=1
@@ -145,8 +137,6 @@ psect cinit,class=CODE,delta=2
 	clrf	((__pbssCOMMON)+0)&07Fh
 	clrf	((__pbssCOMMON)+1)&07Fh
 	clrf	((__pbssCOMMON)+2)&07Fh
-	clrf	((__pbssCOMMON)+3)&07Fh
-	clrf	((__pbssCOMMON)+4)&07Fh
 ; Initialize objects allocated to BANK0
 	global __pidataBANK0
 psect cinit,class=CODE,delta=2
@@ -194,9 +184,9 @@ __pcstackCOMMON:
 ??_init:	; 0 bytes @ 0x2
 	global	??_main
 ??_main:	; 0 bytes @ 0x2
-;;Data sizes: Strings 0, constant 0, data 10, bss 5, persistent 0 stack 0
+;;Data sizes: Strings 0, constant 0, data 10, bss 3, persistent 0 stack 0
 ;;Auto spaces:   Size  Autos    Used
-;; COMMON          14      2       7
+;; COMMON          14      2       5
 ;; BANK0           80      0      10
 ;; BANK1           80      0       0
 ;; BANK2           80      0       0
@@ -286,15 +276,15 @@ __pcstackCOMMON:
 ;;BANK1               50      0       0       5        0.0%
 ;;BITBANK1            50      0       0       4        0.0%
 ;;CODE                 0      0       0       0        0.0%
-;;DATA                 0      0      12      10        0.0%
-;;ABS                  0      0      11       8        0.0%
+;;DATA                 0      0      10      10        0.0%
+;;ABS                  0      0       F       8        0.0%
 ;;NULL                 0      0       0       0        0.0%
 ;;STACK                0      0       1       2        0.0%
 ;;BANK0               50      0       A       3       12.5%
 ;;BITBANK0            50      0       0       9        0.0%
 ;;SFR0                 0      0       0       1        0.0%
 ;;BITSFR0              0      0       0       1        0.0%
-;;COMMON               E      2       7       1       50.0%
+;;COMMON               E      2       5       1       35.7%
 ;;BITCOMMON            E      0       0       0        0.0%
 ;;EEDATA             100      0       0       0        0.0%
 
@@ -342,7 +332,7 @@ _main:
 ; Regs used in _main: [wreg-fsr0h+status,2-btemp+0+pclath+cstack]
 	line	38
 	
-l1241:	
+l1212:	
 ;main.c: 34: static int ad_in;
 ;main.c: 35: static char i = 0;
 ;main.c: 36: static char temp_msb, temp_lsb, tempC, tempFrac;
@@ -350,23 +340,23 @@ l1241:
 	fcall	_init
 	line	41
 	
-l1243:	
-;main.c: 41: if(sec_elapsed) {
-	movf	(_sec_elapsed),w	;volatile
+l1214:	
+;main.c: 41: if(seconds) {
+	movf	(_seconds),w
 	skipz
-	goto	u80
-	goto	l1255
-u80:
+	goto	u60
+	goto	l1226
+u60:
 	line	43
 	
-l1245:	
+l1216:	
 ;main.c: 43: numDisplay++;
 	incf	(_numDisplay),f	;volatile
 	skipnz
 	incf	(_numDisplay+1),f	;volatile
 	line	44
 	
-l1247:	
+l1218:	
 ;main.c: 44: if(numDisplay > 9)
 	movf	(_numDisplay+1),w	;volatile
 	xorlw	80h
@@ -374,26 +364,26 @@ l1247:
 	movlw	(high(0Ah))^80h
 	subwf	btemp+0,w
 	skipz
-	goto	u95
+	goto	u75
 	movlw	low(0Ah)
 	subwf	(_numDisplay),w	;volatile
-u95:
+u75:
 
 	skipc
-	goto	u91
-	goto	u90
-u91:
-	goto	l1251
-u90:
+	goto	u71
+	goto	u70
+u71:
+	goto	l1222
+u70:
 	line	45
 	
-l1249:	
+l1220:	
 ;main.c: 45: numDisplay = 0;
 	clrf	(_numDisplay)	;volatile
 	clrf	(_numDisplay+1)	;volatile
 	line	46
 	
-l1251:	
+l1222:	
 ;main.c: 46: PORTC = ~numLookup[numDisplay];
 	movf	(_numDisplay),w	;volatile
 	addlw	_numLookup&0ffh
@@ -405,22 +395,22 @@ l1251:
 	movwf	(7)	;volatile
 	line	47
 	
-l1253:	
-;main.c: 47: sec_elapsed = 0;
-	clrf	(_sec_elapsed)	;volatile
+l1224:	
+;main.c: 47: seconds = 0;
+	clrf	(_seconds)
 	line	49
 	
-l1255:	
+l1226:	
 ;main.c: 48: }
 ;main.c: 49: RB7 = 1;
 	bcf	status, 5	;RP0=0, select bank0
 	bsf	(55/8),(55)&7
 	line	51
 	
-l1257:	
+l1228:	
 ;main.c: 51: RB7 = 0;
 	bcf	(55/8),(55)&7
-	goto	l1243
+	goto	l1214
 	global	start
 	ljmp	start
 	opt stack 0
@@ -438,7 +428,7 @@ __ptext83:
 
 ;; *************** function _init *****************
 ;; Defined at:
-;;		line 54 in file "C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\utils.c"
+;;		line 33 in file "C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\utils.c"
 ;; Parameters:    Size  Location     Type
 ;;		None
 ;; Auto vars:     Size  Location     Type
@@ -467,116 +457,117 @@ __ptext83:
 ;;
 psect	text83
 	file	"C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\utils.c"
+	line	33
 	global	__size_of_init
 	__size_of_init	equ	__end_of_init-_init
 	
 _init:	
 	opt	stack 7
 ; Regs used in _init: [wreg+status,2]
-	line	56
+	line	35
 	
-l1209:	
-;utils.c: 56: TRISA = 0b00000100;
+l1180:	
+;utils.c: 35: TRISA = 0b00000100;
 	movlw	(04h)
 	bsf	status, 5	;RP0=1, select bank1
 	movwf	(133)^080h	;volatile
-	line	57
+	line	36
 	
-l1211:	
-;utils.c: 57: TRISB = 0b00000000;
+l1182:	
+;utils.c: 36: TRISB = 0b00000000;
 	clrf	(134)^080h	;volatile
-	line	58
+	line	37
 	
-l1213:	
-;utils.c: 58: TRISC = 0b00000000;
+l1184:	
+;utils.c: 37: TRISC = 0b00000000;
 	clrf	(135)^080h	;volatile
-	line	60
+	line	39
 	
-l1215:	
-;utils.c: 60: ANSEL = 0b00000000;
+l1186:	
+;utils.c: 39: ANSEL = 0b00000000;
 	bcf	status, 5	;RP0=0, select bank2
 	bsf	status, 6	;RP1=1, select bank2
 	clrf	(286)^0100h	;volatile
-	line	61
+	line	40
 	
-l1217:	
-;utils.c: 61: ANSELH = 0b00000011;
+l1188:	
+;utils.c: 40: ANSELH = 0b00000011;
 	movlw	(03h)
 	movwf	(287)^0100h	;volatile
-	line	63
+	line	42
 	
-l1219:	
-;utils.c: 63: TMR1H = 0xFF;
+l1190:	
+;utils.c: 42: TMR1H = 0xFF;
 	movlw	(0FFh)
 	bcf	status, 6	;RP1=0, select bank0
 	movwf	(15)	;volatile
-	line	64
+	line	43
 	
-l1221:	
-;utils.c: 64: TMR1L = 0x58;
+l1192:	
+;utils.c: 43: TMR1L = 0x58;
 	movlw	(058h)
 	movwf	(14)	;volatile
-	line	65
-;utils.c: 65: TMR0 = 0x00;
+	line	44
+;utils.c: 44: TMR0 = 0x00;
 	clrf	(1)	;volatile
-	line	67
+	line	46
 	
-l1223:	
-;utils.c: 67: T1CON = 0b00110001;
+l1194:	
+;utils.c: 46: T1CON = 0b00110001;
 	movlw	(031h)
 	movwf	(16)	;volatile
-	line	70
+	line	49
 	
-l1225:	
-;utils.c: 70: T2CON = 0b01111101;
+l1196:	
+;utils.c: 49: T2CON = 0b01111101;
 	movlw	(07Dh)
 	movwf	(18)	;volatile
-	line	71
+	line	50
 	
-l1227:	
-;utils.c: 71: PR2 = 0x80;
+l1198:	
+;utils.c: 50: PR2 = 0x80;
 	movlw	(080h)
 	bsf	status, 5	;RP0=1, select bank1
 	movwf	(146)^080h	;volatile
-	line	74
+	line	53
 	
-l1229:	
-;utils.c: 74: INTCON = 0b11110000;
-	movlw	(0F0h)
+l1200:	
+;utils.c: 53: INTCON = 0b11100000;
+	movlw	(0E0h)
 	movwf	(11)	;volatile
-	line	76
+	line	55
 	
-l1231:	
-;utils.c: 76: PIE1 = 0b00000011;
+l1202:	
+;utils.c: 55: PIE1 = 0b00000011;
 	movlw	(03h)
 	movwf	(140)^080h	;volatile
-	line	78
+	line	57
 	
-l1233:	
-;utils.c: 78: WPUA = 0x00;
+l1204:	
+;utils.c: 57: WPUA = 0x00;
 	clrf	(149)^080h	;volatile
-	line	80
+	line	59
 	
-l1235:	
-;utils.c: 80: CM1CON0 = 0x00;
+l1206:	
+;utils.c: 59: CM1CON0 = 0x00;
 	bcf	status, 5	;RP0=0, select bank2
 	bsf	status, 6	;RP1=1, select bank2
 	clrf	(281)^0100h	;volatile
-	line	81
+	line	60
 	
-l1237:	
-;utils.c: 81: CM2CON0 = 0x00;
+l1208:	
+;utils.c: 60: CM2CON0 = 0x00;
 	clrf	(282)^0100h	;volatile
-	line	82
+	line	61
 	
-l1239:	
-;utils.c: 82: T0CS = 0x0;
+l1210:	
+;utils.c: 61: T0CS = 0x0;
 	bsf	status, 5	;RP0=1, select bank1
 	bcf	status, 6	;RP1=0, select bank1
 	bcf	(1037/8)^080h,(1037)&7
-	line	83
+	line	62
 	
-l738:	
+l727:	
 	return
 	opt stack 0
 GLOBAL	__end_of_init
@@ -591,13 +582,13 @@ __ptext84:
 
 ;; *************** function _isr *****************
 ;; Defined at:
-;;		line 12 in file "C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\utils.c"
+;;		line 8 in file "C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\utils.c"
 ;; Parameters:    Size  Location     Type
 ;;		None
 ;; Auto vars:     Size  Location     Type
 ;;		None
 ;; Return value:  Size  Location     Type
-;;                  2  726[COMMON] int 
+;;                  2  720[COMMON] int 
 ;; Registers used:
 ;;		wreg, status,2, status,0
 ;; Tracked objects:
@@ -619,7 +610,7 @@ __ptext84:
 ;;
 psect	text84
 	file	"C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\utils.c"
-	line	12
+	line	8
 	global	__size_of_isr
 	__size_of_isr	equ	__end_of_isr-_isr
 	
@@ -640,128 +631,74 @@ interrupt_function:
 	movwf	(??_isr+1)
 	ljmp	_isr
 psect	text84
-	line	14
+	line	10
 	
-i1l1127:	
-;utils.c: 14: if(INTCON & 0b00000010) {
-	btfss	(11),(1)&7
+i1l1116:	
+;utils.c: 10: if(INTCON & 0b00000100) {
+	btfss	(11),(2)&7
 	goto	u1_21
 	goto	u1_20
 u1_21:
-	goto	i1l1137
+	goto	i1l721
 u1_20:
-	line	15
+	line	12
 	
-i1l1129:	
-;utils.c: 15: if((TMR0 > 65) || (tripped == 1)) {
-	bcf	status, 5	;RP0=0, select bank0
-	bcf	status, 6	;RP1=0, select bank0
-	movf	(1),w	;volatile
-	line	18
-	
-i1l1133:	
-;utils.c: 17: }
-;utils.c: 18: TMR0 = 0x00;
-	clrf	(1)	;volatile
-	line	20
-	
-i1l1135:	
-;utils.c: 20: INTCON &= 0b11111101;
-	bcf	(11)+(1/8),(1)&7	;volatile
-	line	24
-	
-i1l1137:	
-;utils.c: 21: }
-;utils.c: 24: if(INTCON & 0b00000100) {
-	btfss	(11),(2)&7
-	goto	u2_21
-	goto	u2_20
-u2_21:
-	goto	i1l731
-u2_20:
-	line	26
-	
-i1l1139:	
-;utils.c: 26: INTCON &= 0b11111011;
+i1l1118:	
+;utils.c: 12: INTCON &= 0b11111011;
 	bcf	(11)+(2/8),(2)&7	;volatile
-	line	27
+	line	13
 	
-i1l731:	
-	line	30
-;utils.c: 27: }
-;utils.c: 30: if(PIR1 & 0b00000001) {
+i1l721:	
+	line	16
+;utils.c: 13: }
+;utils.c: 16: if(PIR1 & 0b00000001) {
 	bcf	status, 5	;RP0=0, select bank0
 	bcf	status, 6	;RP1=0, select bank0
 	btfss	(12),(0)&7
+	goto	u2_21
+	goto	u2_20
+u2_21:
+	goto	i1l1124
+u2_20:
+	line	18
+	
+i1l1120:	
+;utils.c: 18: PIR1 &= 0b11111110;
+	bcf	(12)+(0/8),(0)&7	;volatile
+	line	19
+	
+i1l1122:	
+;utils.c: 19: TMR1H = 0xFF;
+	movlw	(0FFh)
+	movwf	(15)	;volatile
+	line	20
+;utils.c: 20: TMR1L = 0x58;
+	movlw	(058h)
+	movwf	(14)	;volatile
+	line	24
+	
+i1l1124:	
+;utils.c: 21: }
+;utils.c: 24: if(PIR1 & 0x02) {
+	btfss	(12),(1)&7
 	goto	u3_21
 	goto	u3_20
 u3_21:
-	goto	i1l1155
+	goto	i1l724
 u3_20:
-	line	31
+	line	25
 	
-i1l1141:	
-;utils.c: 31: if(sec_count > 4) {
-	movlw	(05h)
-	subwf	(_sec_count),w	;volatile
-	skipc
-	goto	u4_21
-	goto	u4_20
-u4_21:
-	goto	i1l1147
-u4_20:
-	line	33
+i1l1126:	
+;utils.c: 25: seconds++;
+	incf	(_seconds),f
+	line	26
 	
-i1l1143:	
-;utils.c: 33: sec_elapsed = 1;
-	movlw	(01h)
-	movwf	(_sec_elapsed)	;volatile
-	line	34
-	
-i1l1145:	
-;utils.c: 34: sec_count = 0;
-	clrf	(_sec_count)	;volatile
-	line	36
-	
-i1l1147:	
-;utils.c: 35: }
-;utils.c: 36: sec_count++;
-	incf	(_sec_count),f	;volatile
-	line	39
-	
-i1l1149:	
-;utils.c: 39: PIR1 &= 0b11111110;
-	bcf	(12)+(0/8),(0)&7	;volatile
-	line	40
-	
-i1l1151:	
-;utils.c: 40: TMR1H = 0xFF;
-	movlw	(0FFh)
-	movwf	(15)	;volatile
-	line	41
-	
-i1l1153:	
-;utils.c: 41: TMR1L = 0x58;
-	movlw	(058h)
-	movwf	(14)	;volatile
-	line	45
-	
-i1l1155:	
-;utils.c: 46: secondz++;
-	btfss	(12),(1)&7
-	goto	u5_21
-	goto	u5_20
-u5_21:
-	goto	i1l735
-u5_20:
-	line	47
-	
-i1l1157:	
-;utils.c: 47: TMR2IF = 0;
+i1l1128:	
+;utils.c: 26: TMR2IF = 0;
 	bcf	(97/8),(97)&7
-	line	49
+	line	28
 	
-i1l735:	
+i1l724:	
 	movf	(??_isr+1),w
 	movwf	pclath
 	movf	(??_isr+0),w

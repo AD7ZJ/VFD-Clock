@@ -14,13 +14,6 @@ interrupt isr(void) {
 
 	// Timer 1 interrupt every 0.2s
 	if(PIR1 & 0b00000001) {
-		if(sec_count > 4) {
-			// It's been 1 second, set the flag to output data
-			sec_elapsed = 1;
-			sec_count = 0;
-		}
-		sec_count++;
-		
 		// Clear interrupt flag
 		PIR1 &= 0b11111110;
 		TMR1H = 0xFF;

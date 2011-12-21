@@ -38,13 +38,13 @@ void main(void) {
 	init();
 
 	while (1) {
-		if(sec_elapsed) {
+		if(seconds) {
 			//__delay_ms(100);
 			numDisplay++;
 			if(numDisplay > 9)
 				numDisplay = 0;
 			PORTC = ~numLookup[numDisplay];
-			sec_elapsed = 0;
+			seconds = 0;
 		}
 		RB7 = 1;
 		//__delay_ms(100);
