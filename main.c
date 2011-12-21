@@ -1,11 +1,11 @@
 #include <htc.h>
 #include <pic.h>
 //#include <stdio.h>
-#define _XTAL_FREQ 4000000
+#define _XTAL_FREQ 32768
 #include "utils.c"
 
 
-__CONFIG(INTIO & WDTDIS & PWRTEN & MCLRDIS & UNPROTECT & UNPROTECT & BORDIS & IESODIS & FCMDIS);
+__CONFIG(LP & WDTDIS & PWRTEN & MCLRDIS & UNPROTECT & UNPROTECT & BORDIS & IESODIS & FCMDIS);
 
 // Function Prototypes
 void init(void);
@@ -26,6 +26,10 @@ char numLookup[10] = {
 	0b11011110   // 9
 };
 
+unsigned char seconds = 0;
+unsigned char minutes = 0;
+unsigned char hours = 0;
+
 void main(void) {
 	static int ad_in;
 	static char i = 0;
@@ -34,16 +38,18 @@ void main(void) {
 	init();
 
 	while (1) {
-		//if(sec_elapsed) {
-			__delay_ms(100);
+		if(sec_elapsed) {
+			//__delay_ms(100);
 			numDisplay++;
 			if(numDisplay > 9)
 				numDisplay = 0;
 			PORTC = ~numLookup[numDisplay];
-		//}
+			sec_elapsed = 0;
+		}
 		RB7 = 1;
-		__delay_ms(100);
+		//__delay_ms(100);
 		RB7 = 0;
+
 	}
 }
 

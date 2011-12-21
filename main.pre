@@ -534,22 +534,12 @@ extern unsigned char eeprom_read(unsigned char addr);
 extern void _delay(unsigned long);
 
 # 1 "C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\utils.c"
-volatile unsigned char tripped = 0;
-volatile unsigned char sec_elapsed = 0;
-volatile unsigned char sec_count = 0;
+extern unsigned char seconds;
+extern unsigned char minutes;
+extern unsigned char hours;
 
-# 9
+# 8
 interrupt isr(void) {
-
-if(INTCON & 0b00000010) {
-if((TMR0 > 65) || (tripped == 1)) {
-
-}
-TMR0 = 0x00;
-
-INTCON &= 0b11111101;
-}
-
 
 if(INTCON & 0b00000100) {
 
@@ -567,12 +557,18 @@ sec_count++;
 
 
 PIR1 &= 0b11111110;
-TMR1H = 0x9E;
+TMR1H = 0xFF;
 TMR1L = 0x58;
+}
+
+
+if(PIR1 & 0x02) {
+seconds++;
+TMR2IF = 0;
 }
 }
 
-# 45
+# 40
 void init(void) {
 
 TRISA = 0b00000100;
@@ -582,16 +578,20 @@ TRISC = 0b00000000;
 ANSEL = 0b00000000;
 ANSELH = 0b00000011;
 
-TMR1H = 0x00;
-TMR1L = 0x00;
+TMR1H = 0xFF;
+TMR1L = 0x58;
 TMR0 = 0x00;
 
 T1CON = 0b00110001;
 
 
+T2CON = 0b01111101;
+PR2 = 0x80;
 
 
-PIE1 = 0b00000001;
+INTCON = 0b11100000;
+
+PIE1 = 0b00000011;
 
 WPUA = 0x00;
 
@@ -601,7 +601,7 @@ T0CS = 0x0;
 }
 
 # 8 "C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\main.c"
-asm("\tpsect config,class=CONFIG,delta=2"); asm("\tdw ""0x3FFC & 0x3FF7 & 0x3FEF & 0x3FDF & 0x3FFF & 0x3FFF & 0x3CFF & 0x3BFF & 0x37FF");
+asm("\tpsect config,class=CONFIG,delta=2"); asm("\tdw ""0x3FF8 & 0x3FF7 & 0x3FEF & 0x3FDF & 0x3FFF & 0x3FFF & 0x3CFF & 0x3BFF & 0x37FF");
 
 
 void init(void);
@@ -622,6 +622,10 @@ char numLookup[10] = {
 0b11011110
 };
 
+unsigned char seconds = 0;
+unsigned char minutes = 0;
+unsigned char hours = 0;
+
 void main(void) {
 static int ad_in;
 static char i = 0;
@@ -630,16 +634,18 @@ static char temp_msb, temp_lsb, tempC, tempFrac;
 init();
 
 while (1) {
+if(sec_elapsed) {
 
-_delay((unsigned long)((100)*(4000000/4000.0)));
 numDisplay++;
 if(numDisplay > 9)
 numDisplay = 0;
 PORTC = ~numLookup[numDisplay];
-
+sec_elapsed = 0;
+}
 RB7 = 1;
-_delay((unsigned long)((100)*(4000000/4000.0)));
+
 RB7 = 0;
+
 }
 }
 

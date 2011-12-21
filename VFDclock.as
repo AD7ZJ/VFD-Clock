@@ -42,7 +42,7 @@ pclath	equ	10
 # 8 "C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\main.c"
 	psect config,class=CONFIG,delta=2 ;#
 # 8 "C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\main.c"
-	dw 0x3FFC & 0x3FF7 & 0x3FEF & 0x3FDF & 0x3FFF & 0x3FFF & 0x3CFF & 0x3BFF & 0x37FF ;#
+	dw 0x3FF8 & 0x3FF7 & 0x3FEF & 0x3FDF & 0x3FFF & 0x3FFF & 0x3CFF & 0x3BFF & 0x37FF ;#
 	FNCALL	_main,_init
 	FNROOT	_main
 	FNCALL	intlevel1,_isr
@@ -78,6 +78,8 @@ _PIR1	set	12
 _PORTC	set	7
 	global	_T1CON
 _T1CON	set	16
+	global	_T2CON
+_T2CON	set	18
 	global	_TMR0
 _TMR0	set	1
 	global	_TMR1H
@@ -86,8 +88,12 @@ _TMR1H	set	15
 _TMR1L	set	14
 	global	_RB7
 _RB7	set	55
+	global	_TMR2IF
+_TMR2IF	set	97
 	global	_PIE1
 _PIE1	set	140
+	global	_PR2
+_PR2	set	146
 	global	_TRISA
 _TRISA	set	133
 	global	_TRISB
@@ -188,10 +194,9 @@ __pcstackCOMMON:
 ??_init:	; 0 bytes @ 0x2
 	global	??_main
 ??_main:	; 0 bytes @ 0x2
-	ds	2
 ;;Data sizes: Strings 0, constant 0, data 10, bss 5, persistent 0 stack 0
 ;;Auto spaces:   Size  Autos    Used
-;; COMMON          14      4       9
+;; COMMON          14      2       7
 ;; BANK0           80      0      10
 ;; BANK1           80      0       0
 ;; BANK2           80      0       0
@@ -235,7 +240,7 @@ __pcstackCOMMON:
 ;;   None.
 
 ;;
-;;Main: autosize = 0, tempsize = 2, incstack = 0, save=0
+;;Main: autosize = 0, tempsize = 0, incstack = 0, save=0
 ;;
 
 ;;
@@ -244,8 +249,7 @@ __pcstackCOMMON:
 ;; ---------------------------------------------------------------------------------
 ;; (Depth) Function   	        Calls       Base Space   Used Autos Params    Refs
 ;; ---------------------------------------------------------------------------------
-;; (0) _main                                                 2     2      0       0
-;;                                              2 COMMON     2     2      0
+;; (0) _main                                                 0     0      0       0
 ;;                               _init
 ;; ---------------------------------------------------------------------------------
 ;; (1) _init                                                 0     0      0       0
@@ -282,15 +286,15 @@ __pcstackCOMMON:
 ;;BANK1               50      0       0       5        0.0%
 ;;BITBANK1            50      0       0       4        0.0%
 ;;CODE                 0      0       0       0        0.0%
-;;DATA                 0      0      14      10        0.0%
-;;ABS                  0      0      13       8        0.0%
+;;DATA                 0      0      12      10        0.0%
+;;ABS                  0      0      11       8        0.0%
 ;;NULL                 0      0       0       0        0.0%
 ;;STACK                0      0       1       2        0.0%
 ;;BANK0               50      0       A       3       12.5%
 ;;BITBANK0            50      0       0       9        0.0%
 ;;SFR0                 0      0       0       1        0.0%
 ;;BITSFR0              0      0       0       1        0.0%
-;;COMMON               E      4       9       1       64.3%
+;;COMMON               E      2       7       1       50.0%
 ;;BITCOMMON            E      0       0       0        0.0%
 ;;EEDATA             100      0       0       0        0.0%
 
@@ -301,7 +305,7 @@ __pmaintext:
 
 ;; *************** function _main *****************
 ;; Defined at:
-;;		line 29 in file "C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\main.c"
+;;		line 33 in file "C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\main.c"
 ;; Parameters:    Size  Location     Type
 ;;		None
 ;; Auto vars:     Size  Location     Type
@@ -312,14 +316,14 @@ __pmaintext:
 ;;		wreg, fsr0l, fsr0h, status,2, status,0, btemp+0, pclath, cstack
 ;; Tracked objects:
 ;;		On entry : 17F/0
-;;		On exit  : 60/0
-;;		Unchanged: 0/0
+;;		On exit  : 160/0
+;;		Unchanged: FFE00/0
 ;; Data sizes:     COMMON   BANK0   BANK1   BANK2
 ;;      Params:         0       0       0       0
 ;;      Locals:         0       0       0       0
-;;      Temps:          2       0       0       0
-;;      Totals:         2       0       0       0
-;;Total ram usage:        2 bytes
+;;      Temps:          0       0       0       0
+;;      Totals:         0       0       0       0
+;;Total ram usage:        0 bytes
 ;; Hardware stack levels required when called:    2
 ;; This function calls:
 ;;		_init
@@ -329,76 +333,68 @@ __pmaintext:
 ;;
 psect	maintext
 	file	"C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\main.c"
-	line	29
+	line	33
 	global	__size_of_main
 	__size_of_main	equ	__end_of_main-_main
 	
 _main:	
 	opt	stack 8
 ; Regs used in _main: [wreg-fsr0h+status,2-btemp+0+pclath+cstack]
-	line	34
-	
-l1197:	
-;main.c: 30: static int ad_in;
-;main.c: 31: static char i = 0;
-;main.c: 32: static char temp_msb, temp_lsb, tempC, tempFrac;
-;main.c: 34: init();
-	fcall	_init
 	line	38
 	
-l1199:	
-;main.c: 38: _delay((unsigned long)((100)*(4000000/4000.0)));
-	opt asmopt_off
-movlw	130
-movwf	((??_main+0)+0+1),f
-	movlw	221
-movwf	((??_main+0)+0),f
-u77:
-	decfsz	((??_main+0)+0),f
-	goto	u77
-	decfsz	((??_main+0)+0+1),f
-	goto	u77
-	nop2
-opt asmopt_on
-
-	line	39
+l1241:	
+;main.c: 34: static int ad_in;
+;main.c: 35: static char i = 0;
+;main.c: 36: static char temp_msb, temp_lsb, tempC, tempFrac;
+;main.c: 38: init();
+	fcall	_init
+	line	41
 	
-l1201:	
-;main.c: 39: numDisplay++;
+l1243:	
+;main.c: 41: if(sec_elapsed) {
+	movf	(_sec_elapsed),w	;volatile
+	skipz
+	goto	u80
+	goto	l1255
+u80:
+	line	43
+	
+l1245:	
+;main.c: 43: numDisplay++;
 	incf	(_numDisplay),f	;volatile
 	skipnz
 	incf	(_numDisplay+1),f	;volatile
-	line	40
+	line	44
 	
-l1203:	
-;main.c: 40: if(numDisplay > 9)
+l1247:	
+;main.c: 44: if(numDisplay > 9)
 	movf	(_numDisplay+1),w	;volatile
 	xorlw	80h
 	movwf	btemp+0
 	movlw	(high(0Ah))^80h
 	subwf	btemp+0,w
 	skipz
-	goto	u65
+	goto	u95
 	movlw	low(0Ah)
 	subwf	(_numDisplay),w	;volatile
-u65:
+u95:
 
 	skipc
-	goto	u61
-	goto	u60
-u61:
-	goto	l1207
-u60:
-	line	41
+	goto	u91
+	goto	u90
+u91:
+	goto	l1251
+u90:
+	line	45
 	
-l1205:	
-;main.c: 41: numDisplay = 0;
+l1249:	
+;main.c: 45: numDisplay = 0;
 	clrf	(_numDisplay)	;volatile
 	clrf	(_numDisplay+1)	;volatile
-	line	42
+	line	46
 	
-l1207:	
-;main.c: 42: PORTC = ~numLookup[numDisplay];
+l1251:	
+;main.c: 46: PORTC = ~numLookup[numDisplay];
 	movf	(_numDisplay),w	;volatile
 	addlw	_numLookup&0ffh
 	movwf	fsr0
@@ -407,36 +403,24 @@ l1207:
 	bcf	status, 5	;RP0=0, select bank0
 	bcf	status, 6	;RP1=0, select bank0
 	movwf	(7)	;volatile
-	line	44
+	line	47
 	
-l1209:	
-;main.c: 44: RB7 = 1;
-	bsf	(55/8),(55)&7
-	line	45
+l1253:	
+;main.c: 47: sec_elapsed = 0;
+	clrf	(_sec_elapsed)	;volatile
+	line	49
 	
-l1211:	
-;main.c: 45: _delay((unsigned long)((100)*(4000000/4000.0)));
-	opt asmopt_off
-movlw	130
-movwf	((??_main+0)+0+1),f
-	movlw	221
-movwf	((??_main+0)+0),f
-u87:
-	decfsz	((??_main+0)+0),f
-	goto	u87
-	decfsz	((??_main+0)+0+1),f
-	goto	u87
-	nop2
-opt asmopt_on
-
-	line	46
-	
-l1213:	
-;main.c: 46: RB7 = 0;
+l1255:	
+;main.c: 48: }
+;main.c: 49: RB7 = 1;
 	bcf	status, 5	;RP0=0, select bank0
-	bcf	status, 6	;RP1=0, select bank0
+	bsf	(55/8),(55)&7
+	line	51
+	
+l1257:	
+;main.c: 51: RB7 = 0;
 	bcf	(55/8),(55)&7
-	goto	l1199
+	goto	l1243
 	global	start
 	ljmp	start
 	opt stack 0
@@ -445,16 +429,16 @@ GLOBAL	__end_of_main
 ;; =============== function _main ends ============
 
 psect	maintext
-	line	48
+	line	54
 	signat	_main,88
 	global	_init
-psect	text72,local,class=CODE,delta=2
-global __ptext72
-__ptext72:
+psect	text83,local,class=CODE,delta=2
+global __ptext83
+__ptext83:
 
 ;; *************** function _init *****************
 ;; Defined at:
-;;		line 45 in file "C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\utils.c"
+;;		line 54 in file "C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\utils.c"
 ;; Parameters:    Size  Location     Type
 ;;		None
 ;; Auto vars:     Size  Location     Type
@@ -481,89 +465,118 @@ __ptext72:
 ;;		_main
 ;; This function uses a non-reentrant model
 ;;
-psect	text72
+psect	text83
 	file	"C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\utils.c"
-	line	45
 	global	__size_of_init
 	__size_of_init	equ	__end_of_init-_init
 	
 _init:	
 	opt	stack 7
 ; Regs used in _init: [wreg+status,2]
-	line	47
+	line	56
 	
-l1181:	
-;utils.c: 47: TRISA = 0b00000100;
+l1209:	
+;utils.c: 56: TRISA = 0b00000100;
 	movlw	(04h)
 	bsf	status, 5	;RP0=1, select bank1
 	movwf	(133)^080h	;volatile
-	line	48
+	line	57
 	
-l1183:	
-;utils.c: 48: TRISB = 0b00000000;
+l1211:	
+;utils.c: 57: TRISB = 0b00000000;
 	clrf	(134)^080h	;volatile
-	line	49
+	line	58
 	
-l1185:	
-;utils.c: 49: TRISC = 0b00000000;
+l1213:	
+;utils.c: 58: TRISC = 0b00000000;
 	clrf	(135)^080h	;volatile
-	line	51
+	line	60
 	
-l1187:	
-;utils.c: 51: ANSEL = 0b00000000;
+l1215:	
+;utils.c: 60: ANSEL = 0b00000000;
 	bcf	status, 5	;RP0=0, select bank2
 	bsf	status, 6	;RP1=1, select bank2
 	clrf	(286)^0100h	;volatile
-	line	52
+	line	61
 	
-l1189:	
-;utils.c: 52: ANSELH = 0b00000011;
+l1217:	
+;utils.c: 61: ANSELH = 0b00000011;
 	movlw	(03h)
 	movwf	(287)^0100h	;volatile
-	line	54
-;utils.c: 54: TMR1H = 0x00;
-	bcf	status, 6	;RP1=0, select bank0
-	clrf	(15)	;volatile
-	line	55
-;utils.c: 55: TMR1L = 0x00;
-	clrf	(14)	;volatile
-	line	56
-;utils.c: 56: TMR0 = 0x00;
-	clrf	(1)	;volatile
-	line	58
-	
-l1191:	
-;utils.c: 58: T1CON = 0b00110001;
-	movlw	(031h)
-	movwf	(16)	;volatile
 	line	63
 	
-l1193:	
-;utils.c: 63: PIE1 = 0b00000001;
-	movlw	(01h)
-	bsf	status, 5	;RP0=1, select bank1
-	movwf	(140)^080h	;volatile
+l1219:	
+;utils.c: 63: TMR1H = 0xFF;
+	movlw	(0FFh)
+	bcf	status, 6	;RP1=0, select bank0
+	movwf	(15)	;volatile
+	line	64
+	
+l1221:	
+;utils.c: 64: TMR1L = 0x58;
+	movlw	(058h)
+	movwf	(14)	;volatile
 	line	65
-;utils.c: 65: WPUA = 0x00;
-	clrf	(149)^080h	;volatile
+;utils.c: 65: TMR0 = 0x00;
+	clrf	(1)	;volatile
 	line	67
-;utils.c: 67: CM1CON0 = 0x00;
+	
+l1223:	
+;utils.c: 67: T1CON = 0b00110001;
+	movlw	(031h)
+	movwf	(16)	;volatile
+	line	70
+	
+l1225:	
+;utils.c: 70: T2CON = 0b01111101;
+	movlw	(07Dh)
+	movwf	(18)	;volatile
+	line	71
+	
+l1227:	
+;utils.c: 71: PR2 = 0x80;
+	movlw	(080h)
+	bsf	status, 5	;RP0=1, select bank1
+	movwf	(146)^080h	;volatile
+	line	74
+	
+l1229:	
+;utils.c: 74: INTCON = 0b11110000;
+	movlw	(0F0h)
+	movwf	(11)	;volatile
+	line	76
+	
+l1231:	
+;utils.c: 76: PIE1 = 0b00000011;
+	movlw	(03h)
+	movwf	(140)^080h	;volatile
+	line	78
+	
+l1233:	
+;utils.c: 78: WPUA = 0x00;
+	clrf	(149)^080h	;volatile
+	line	80
+	
+l1235:	
+;utils.c: 80: CM1CON0 = 0x00;
 	bcf	status, 5	;RP0=0, select bank2
 	bsf	status, 6	;RP1=1, select bank2
 	clrf	(281)^0100h	;volatile
-	line	68
-;utils.c: 68: CM2CON0 = 0x00;
-	clrf	(282)^0100h	;volatile
-	line	69
+	line	81
 	
-l1195:	
-;utils.c: 69: T0CS = 0x0;
+l1237:	
+;utils.c: 81: CM2CON0 = 0x00;
+	clrf	(282)^0100h	;volatile
+	line	82
+	
+l1239:	
+;utils.c: 82: T0CS = 0x0;
 	bsf	status, 5	;RP0=1, select bank1
 	bcf	status, 6	;RP1=0, select bank1
 	bcf	(1037/8)^080h,(1037)&7
-	line	70
+	line	83
 	
-l731:	
+l738:	
 	return
 	opt stack 0
 GLOBAL	__end_of_init
@@ -572,19 +585,19 @@ GLOBAL	__end_of_init
 
 	signat	_init,88
 	global	_isr
-psect	text73,local,class=CODE,delta=2
-global __ptext73
-__ptext73:
+psect	text84,local,class=CODE,delta=2
+global __ptext84
+__ptext84:
 
 ;; *************** function _isr *****************
 ;; Defined at:
-;;		line 9 in file "C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\utils.c"
+;;		line 12 in file "C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\utils.c"
 ;; Parameters:    Size  Location     Type
 ;;		None
 ;; Auto vars:     Size  Location     Type
 ;;		None
 ;; Return value:  Size  Location     Type
-;;                  2  720[COMMON] int 
+;;                  2  726[COMMON] int 
 ;; Registers used:
 ;;		wreg, status,2, status,0
 ;; Tracked objects:
@@ -604,9 +617,9 @@ __ptext73:
 ;;		Interrupt level 1
 ;; This function uses a non-reentrant model
 ;;
-psect	text73
+psect	text84
 	file	"C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\utils.c"
-	line	9
+	line	12
 	global	__size_of_isr
 	__size_of_isr	equ	__end_of_isr-_isr
 	
@@ -626,114 +639,129 @@ interrupt_function:
 	movf	pclath,w
 	movwf	(??_isr+1)
 	ljmp	_isr
-psect	text73
-	line	11
+psect	text84
+	line	14
 	
-i1l1119:	
-;utils.c: 11: if(INTCON & 0b00000010) {
+i1l1127:	
+;utils.c: 14: if(INTCON & 0b00000010) {
 	btfss	(11),(1)&7
 	goto	u1_21
 	goto	u1_20
 u1_21:
-	goto	i1l1129
+	goto	i1l1137
 u1_20:
-	line	12
+	line	15
 	
-i1l1121:	
-;utils.c: 12: if((TMR0 > 65) || (tripped == 1)) {
+i1l1129:	
+;utils.c: 15: if((TMR0 > 65) || (tripped == 1)) {
 	bcf	status, 5	;RP0=0, select bank0
 	bcf	status, 6	;RP1=0, select bank0
 	movf	(1),w	;volatile
-	line	15
+	line	18
 	
-i1l1125:	
-;utils.c: 14: }
-;utils.c: 15: TMR0 = 0x00;
+i1l1133:	
+;utils.c: 17: }
+;utils.c: 18: TMR0 = 0x00;
 	clrf	(1)	;volatile
-	line	17
+	line	20
 	
-i1l1127:	
-;utils.c: 17: INTCON &= 0b11111101;
+i1l1135:	
+;utils.c: 20: INTCON &= 0b11111101;
 	bcf	(11)+(1/8),(1)&7	;volatile
-	line	21
+	line	24
 	
-i1l1129:	
-;utils.c: 18: }
-;utils.c: 21: if(INTCON & 0b00000100) {
+i1l1137:	
+;utils.c: 21: }
+;utils.c: 24: if(INTCON & 0b00000100) {
 	btfss	(11),(2)&7
 	goto	u2_21
 	goto	u2_20
 u2_21:
-	goto	i1l725
+	goto	i1l731
 u2_20:
-	line	23
+	line	26
 	
-i1l1131:	
-;utils.c: 23: INTCON &= 0b11111011;
+i1l1139:	
+;utils.c: 26: INTCON &= 0b11111011;
 	bcf	(11)+(2/8),(2)&7	;volatile
-	line	24
-	
-i1l725:	
 	line	27
-;utils.c: 24: }
-;utils.c: 27: if(PIR1 & 0b00000001) {
+	
+i1l731:	
+	line	30
+;utils.c: 27: }
+;utils.c: 30: if(PIR1 & 0b00000001) {
 	bcf	status, 5	;RP0=0, select bank0
 	bcf	status, 6	;RP1=0, select bank0
 	btfss	(12),(0)&7
 	goto	u3_21
 	goto	u3_20
 u3_21:
-	goto	i1l728
+	goto	i1l1155
 u3_20:
-	line	28
+	line	31
 	
-i1l1133:	
-;utils.c: 28: if(sec_count > 4) {
+i1l1141:	
+;utils.c: 31: if(sec_count > 4) {
 	movlw	(05h)
 	subwf	(_sec_count),w	;volatile
 	skipc
 	goto	u4_21
 	goto	u4_20
 u4_21:
-	goto	i1l1139
+	goto	i1l1147
 u4_20:
-	line	30
-	
-i1l1135:	
-;utils.c: 30: sec_elapsed = 1;
-	movlw	(01h)
-	movwf	(_sec_elapsed)	;volatile
-	line	31
-	
-i1l1137:	
-;utils.c: 31: sec_count = 0;
-	clrf	(_sec_count)	;volatile
 	line	33
 	
-i1l1139:	
-;utils.c: 32: }
-;utils.c: 33: sec_count++;
-	incf	(_sec_count),f	;volatile
-	line	36
-	
-i1l1141:	
-;utils.c: 36: PIR1 &= 0b11111110;
-	bcf	(12)+(0/8),(0)&7	;volatile
-	line	37
-	
 i1l1143:	
-;utils.c: 37: TMR1H = 0x9E;
-	movlw	(09Eh)
-	movwf	(15)	;volatile
-	line	38
+;utils.c: 33: sec_elapsed = 1;
+	movlw	(01h)
+	movwf	(_sec_elapsed)	;volatile
+	line	34
 	
 i1l1145:	
-;utils.c: 38: TMR1L = 0x58;
-	movlw	(058h)
-	movwf	(14)	;volatile
+;utils.c: 34: sec_count = 0;
+	clrf	(_sec_count)	;volatile
+	line	36
+	
+i1l1147:	
+;utils.c: 35: }
+;utils.c: 36: sec_count++;
+	incf	(_sec_count),f	;volatile
+	line	39
+	
+i1l1149:	
+;utils.c: 39: PIR1 &= 0b11111110;
+	bcf	(12)+(0/8),(0)&7	;volatile
 	line	40
 	
-i1l728:	
+i1l1151:	
+;utils.c: 40: TMR1H = 0xFF;
+	movlw	(0FFh)
+	movwf	(15)	;volatile
+	line	41
+	
+i1l1153:	
+;utils.c: 41: TMR1L = 0x58;
+	movlw	(058h)
+	movwf	(14)	;volatile
+	line	45
+	
+i1l1155:	
+;utils.c: 46: secondz++;
+	btfss	(12),(1)&7
+	goto	u5_21
+	goto	u5_20
+u5_21:
+	goto	i1l735
+u5_20:
+	line	47
+	
+i1l1157:	
+;utils.c: 47: TMR2IF = 0;
+	bcf	(97/8),(97)&7
+	line	49
+	
+i1l735:	
 	movf	(??_isr+1),w
 	movwf	pclath
 	movf	(??_isr+0),w
@@ -747,9 +775,9 @@ GLOBAL	__end_of_isr
 ;; =============== function _isr ends ============
 
 	signat	_isr,90
-psect	text74,local,class=CODE,delta=2
-global __ptext74
-__ptext74:
+psect	text85,local,class=CODE,delta=2
+global __ptext85
+__ptext85:
 	global	btemp
 	btemp set 07Eh
 

@@ -1,4 +1,4 @@
-_init: CODE, 124 0 28
-_main: CODE, 13 0 50
-_isr: CODE, 63 0 33
-Total: 111
+_init: CODE, 13 0 36
+_main: CODE, 49 0 35
+_isr: CODE, 84 0 35
+Total: 106
