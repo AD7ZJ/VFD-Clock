@@ -534,16 +534,34 @@ extern unsigned char eeprom_read(unsigned char addr);
 extern void _delay(unsigned long);
 
 # 1 "C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\utils.c"
-extern unsigned char seconds;
-extern unsigned char minutes;
-extern unsigned char hours;
+extern volatile unsigned char seconds;
+extern volatile unsigned char tick;
+extern volatile unsigned char buttonTime;
 
-# 8
+extern volatile unsigned char buttonEvent;
+
+# 11
 interrupt isr(void) {
 
 if(INTCON & 0b00000100) {
 
-INTCON &= 0b11111011;
+T0IF = 0;
+if(!RB6) {
+
+if(buttonTime < 255) {
+buttonTime++;
+}
+}
+else {
+if(buttonTime) {
+if(buttonTime > 200)
+buttonEvent = 2;
+else
+buttonEvent = 1;
+RB7 = 1;
+}
+buttonTime = 0;
+}
 }
 
 
@@ -557,15 +575,16 @@ TMR1L = 0x58;
 
 if(PIR1 & 0x02) {
 seconds++;
+tick = 1;
 TMR2IF = 0;
 }
 }
 
-# 33
+# 53
 void init(void) {
 
 TRISA = 0b00000100;
-TRISB = 0b00000000;
+TRISB = 0b01000000;
 TRISC = 0b00000000;
 
 ANSEL = 0b00000000;
@@ -575,11 +594,17 @@ TMR1H = 0xFF;
 TMR1L = 0x58;
 TMR0 = 0x00;
 
+
+T0CS = 0;
+
+
+
+
 T1CON = 0b00110001;
 
 
 T2CON = 0b01111101;
-PR2 = 0x80;
+PR2 = 0x7F;
 
 
 INTCON = 0b11100000;
@@ -588,19 +613,22 @@ PIE1 = 0b00000011;
 
 WPUA = 0x00;
 
+WPUB = 0b01000000;
+
+
 CM1CON0 = 0x00;
 CM2CON0 = 0x00;
 T0CS = 0x0;
 }
 
-# 8 "C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\main.c"
+# 7 "C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\main.c"
 asm("\tpsect config,class=CONFIG,delta=2"); asm("\tdw ""0x3FF8 & 0x3FF7 & 0x3FEF & 0x3FDF & 0x3FFF & 0x3FFF & 0x3CFF & 0x3BFF & 0x37FF");
 
 
 void init(void);
 
 
-volatile int numDisplay = 0;
+
 
 char numLookup[10] = {
 0b10111110,
@@ -615,30 +643,112 @@ char numLookup[10] = {
 0b11011110
 };
 
-unsigned char seconds = 0;
-unsigned char minutes = 0;
-unsigned char hours = 0;
+volatile unsigned char tick = 0;
+volatile unsigned char seconds = 0;
+volatile unsigned char minutes = 33;
+volatile unsigned char buttonTime = 0;
+
+
+volatile unsigned char buttonEvent = 0;
+
+
+unsigned char hours = 17;
+
+enum displayState {
+HOURONE = 0,
+HOURTWO = 1,
+MINONE = 2,
+MINTWO = 3,
+OFF0 = 4,
+OFF1 = 5
+};
+
+enum runState {
+RUNNING = 0,
+SETHOUR = 1,
+SETMIN = 2
+};
+
+enum displayState state = HOURONE;
+enum runState clkState = RUNNING;
+
+void setTime();
 
 void main(void) {
-static int ad_in;
-static char i = 0;
-static char temp_msb, temp_lsb, tempC, tempFrac;
-
 init();
 
 while (1) {
-if(seconds) {
+if(tick) {
+state++;
+PORTC = ~0x00;
+_delay((unsigned long)((100)*(32768/4000.0)));
+tick = 0;
+}
+if(state > 5)
+state = 0;
 
-numDisplay++;
-if(numDisplay > 9)
-numDisplay = 0;
-PORTC = ~numLookup[numDisplay];
+if(seconds > 59) {
+minutes++;
 seconds = 0;
 }
-RB7 = 1;
+if(minutes > 59) {
+hours++;
+minutes = 0;
+}
+if(hours > 23)
+hours = 0;
 
+# 91
 RB7 = 0;
 
+switch(state) {
+case HOURONE:
+
+if(!(hours / 10)) {
+state = HOURTWO;
+break;
+}
+PORTC = ~numLookup[(hours / 10)];
+break;
+case HOURTWO:
+PORTC = ~numLookup[(hours % 10)];
+break;
+case MINONE:
+PORTC = ~numLookup[(minutes / 10)];
+break;
+case MINTWO:
+PORTC = ~numLookup[(minutes % 10)];
+break;
+case OFF0:
+PORTC = ~0x00;
+break;
+case OFF1:
+PORTC = ~0x00;
+break;
+}
+
+
+
+if(buttonEvent) {
+buttonEvent = 0;
+clkState = SETHOUR;
+setTime();
+}
+}
+}
+
+void setTime() {
+while(clkState != RUNNING) {
+_delay((unsigned long)((100)*(32768/4000.0)));
+PORTC = ~numLookup[4];
+_delay((unsigned long)((100)*(32768/4000.0)));
+PORTC = ~numLookup[3];
+_delay((unsigned long)((100)*(32768/4000.0)));
+PORTC = ~numLookup[2];
+_delay((unsigned long)((100)*(32768/4000.0)));
+PORTC = ~numLookup[1];
+
+clkState = RUNNING;
 }
 }
 
