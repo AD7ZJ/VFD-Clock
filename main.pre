@@ -533,14 +533,13 @@ extern unsigned char eeprom_read(unsigned char addr);
 #pragma inline(_delay)
 extern void _delay(unsigned long);
 
-# 1 "C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\utils.c"
+# 28 "C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\utils.c"
 extern volatile unsigned char seconds;
 extern volatile unsigned char tick;
 extern volatile unsigned char buttonTime;
-
 extern volatile unsigned char buttonEvent;
 
-# 11
+# 36
 interrupt isr(void) {
 
 if(INTCON & 0b00000100) {
@@ -551,10 +550,12 @@ if(!RB6) {
 if(buttonTime < 255) {
 buttonTime++;
 }
+else
+PORTC = ~0x00;
 }
 else {
 if(buttonTime) {
-if(buttonTime > 100)
+if(buttonTime > 70)
 buttonEvent = 2;
 else
 buttonEvent = 1;
@@ -580,7 +581,7 @@ TMR2IF = 0;
 }
 }
 
-# 53
+# 80
 void init(void) {
 
 TRISA = 0b00000100;
@@ -621,14 +622,11 @@ CM2CON0 = 0x00;
 T0CS = 0x0;
 }
 
-# 7 "C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\main.c"
+# 34 "C:\Documents and Settings\Elijah\My Documents\PICs\C\VFDclock\main.c"
 asm("\tpsect config,class=CONFIG,delta=2"); asm("\tdw ""0x3FF8 & 0x3FF7 & 0x3FEF & 0x3FDF & 0x3FFF & 0x3FFF & 0x3CFF & 0x3BFF & 0x37FF");
 
 
 void init(void);
-
-
-
 
 char numLookup[10] = {
 0b10111110,
@@ -660,10 +658,7 @@ volatile unsigned char tick = 0;
 volatile unsigned char seconds = 0;
 volatile unsigned char minutes = 0;
 volatile unsigned char buttonTime = 0;
-
-
 volatile unsigned char buttonEvent = 0;
-
 
 unsigned char hours = 12;
 
@@ -692,13 +687,12 @@ init();
 
 while (1) {
 if(tick) {
-state++;
+if(++state > 5)
+state = 0;
 PORTC = ~0x00;
 _delay((unsigned long)((100)*(32768/4000.0)));
 tick = 0;
 }
-if(state > 5)
-state = 0;
 
 if(seconds > 59) {
 minutes++;
@@ -711,7 +705,7 @@ minutes = 0;
 if(hours > 23)
 hours = 0;
 
-# 104
+
 RB7 = 0;
 
 switch(state) {
@@ -741,10 +735,10 @@ break;
 }
 
 
-
 if(buttonEvent == 2) {
 buttonEvent = 0;
 clkState = SETHOUR;
+state = HOURONE;
 setTime();
 }
 }
@@ -755,18 +749,21 @@ while(clkState != RUNNING) {
 switch(clkState) {
 case SETHOUR:
 if(tick) {
-state++;
+if(++state > 3)
+state = 0;
 PORTC = ~0x01;
 _delay((unsigned long)((100)*(32768/4000.0)));
 tick = 0;
 }
-if(state > 3)
-state = 0;
+
 if(buttonEvent == 2) {
+buttonEvent = 0;
 clkState = SETMIN;
+state = MINONE;
 break;
 }
 if(buttonEvent == 1) {
+buttonEvent = 0;
 if(++hours > 23)
 hours = 0;
 }
@@ -787,18 +784,39 @@ break;
 break;
 
 case SETMIN:
-if(buttonEvent == 2)
+if(tick) {
+if(++state > 5)
+state = 2;
+PORTC = ~0x01;
+_delay((unsigned long)((100)*(32768/4000.0)));
+tick = 0;
+}
+
+if(buttonEvent == 2) {
+buttonEvent = 0;
 clkState = RUNNING;
+}
 if(buttonEvent == 1) {
+buttonEvent = 0;
 if(++minutes > 59)
 minutes = 0;
 }
+switch(state) {
+case MINONE:
+PORTC = ~numLookupDec[(minutes / 10)];
+break;
+case MINTWO:
+PORTC = ~numLookupDec[(minutes % 10)];
+break;
+case OFF0:
+PORTC = ~0x01;
+break;
+case OFF1:
 PORTC = ~0x01;
 break;
 }
-buttonEvent = 0;
-
-# 200
+break;
+}
 }
 }
 

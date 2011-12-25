@@ -1,3 +1,30 @@
+/***************************************************************************
+ *                                                                         *
+ *  This program is free software; you can redistribute it and/or modify   *
+ *  it under the terms of the GNU General Public License as published by   *
+ *  the Free Software Foundation; either version 2 of the License, or      *
+ *  (at your option) any later version.                                    *
+ *                                                                         *
+ *  This program is distributed in the hope that it will be useful,        *
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of         *
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
+ *  GNU General Public License for more details.                           *
+ *                                                                         *
+ *  You should have received a copy of the GNU General Public License      *
+ *  along with this program; if not, write to the Free Software            *
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111 USA    *
+ *                                                                         *
+ ***************************************************************************
+ *                                                                         *
+ *               (c) Copyright, 2011 Elijah Brown                          *
+ *                                                                         *
+ ***************************************************************************
+ *                                                                         *
+ * Filename:    main.c                                                     *
+ *                                                                         *
+ ***************************************************************************/
+
+
 #include <htc.h>
 #include <pic.h>
 #define _XTAL_FREQ 32768
@@ -8,9 +35,6 @@ __CONFIG(LP & WDTDIS & PWRTEN & MCLRDIS & UNPROTECT & UNPROTECT & BORDIS & IESOD
 
 // Function Prototypes
 void init(void);
-
-
-//volatile int numDisplay = 0;
 
 char numLookup[10] = {
 	0b10111110,  // 0
@@ -42,10 +66,7 @@ volatile unsigned char tick = 0;
 volatile unsigned char seconds = 0;
 volatile unsigned char minutes = 0;
 volatile unsigned char buttonTime = 0;
-
-// contains button 'events'.  A byte set to 1 is a short press, and a byte set to 2 is a long press
 volatile unsigned char buttonEvent = 0;
-//volatile unsigned char buttonQueuePtr = 0;
 
 unsigned char hours = 12;
 
@@ -74,14 +95,14 @@ void main(void) {
 
 	while (1) {
 		if(tick) {
-			state++;
+			// state machine updates on the 1 Hz tick
+			if(++state > 5)
+				state = 0;
 			PORTC = ~0x00;
 			__delay_ms(100);
 			tick = 0;
 		}
-		if(state > 5)
-			state = 0;
-
+	
 		if(seconds > 59) {
 			minutes++;
 			seconds = 0;
@@ -93,14 +114,7 @@ void main(void) {
 		if(hours > 23)
 			hours = 0;
 		
-		/*if(seconds) {
-			//__delay_ms(100);
-			numDisplay++;
-			if(numDisplay > 9)
-				numDisplay = 0;
-			PORTC = ~numLookup[numDisplay];
-			seconds = 0;
-		} */
+		// toggle test point
 		RB7 = 0; 
 
 		switch(state) {
@@ -128,12 +142,12 @@ void main(void) {
 				PORTC = ~0x00;
 				break;
 		}
-
-		//RB7 = 1;
 		
+		// Holding the button down puts the clock into set mode
 		if(buttonEvent == 2) {
 			buttonEvent = 0;
 			clkState = SETHOUR;
+			state = HOURONE;
 			setTime();
 		}
 	}
@@ -144,18 +158,21 @@ void setTime() {
 		switch(clkState) {
 			case SETHOUR:
 				if(tick) {
-					state++;
+					if(++state > 3)
+						state = 0;
 					PORTC = ~0x01;
 					__delay_ms(100);
 					tick = 0;
 				}
-				if(state > 3)
-					state = 0;
+		
 				if(buttonEvent == 2) {
+					buttonEvent = 0;
 					clkState = SETMIN;
+					state = MINONE;
 					break;
 				}
 				if(buttonEvent == 1) {
+					buttonEvent = 0;
 					if(++hours > 23)
 						hours = 0;
 				}
@@ -176,27 +193,39 @@ void setTime() {
 				break;
 
 			case SETMIN:
-				if(buttonEvent == 2)
+				if(tick) {
+					if(++state > 5)
+						state = 2;
+					PORTC = ~0x01;
+					__delay_ms(100);
+					tick = 0;
+				}
+
+				if(buttonEvent == 2) {
+					buttonEvent = 0;
 					clkState = RUNNING;
+				}
 				if(buttonEvent == 1) {
+					buttonEvent = 0;
 					if(++minutes > 59)
 						minutes = 0;
 				}
-				PORTC = ~0x01;
+				switch(state) {
+					case MINONE:
+						PORTC = ~numLookupDec[(minutes / 10)];
+						break;
+					case MINTWO:
+						PORTC = ~numLookupDec[(minutes % 10)];
+						break;
+					case OFF0:
+						PORTC = ~0x01;
+						break;
+					case OFF1:
+						PORTC = ~0x01;
+						break;
+				}
 				break;
 		}		
-		buttonEvent = 0;
-
-		/*__delay_ms(100);
-		PORTC = ~numLookupDec[4];
-		__delay_ms(100);
-		PORTC = ~numLookupDec[3];
-		__delay_ms(100);
-		PORTC = ~numLookupDec[2];
-		__delay_ms(100);
-		PORTC = ~numLookupDec[1];
-		
-		clkState = RUNNING; */
 	}
 }
 
