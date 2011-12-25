@@ -21,7 +21,7 @@ interrupt isr(void) {
 		}
 		else {
 			if(buttonTime) {
-				if(buttonTime > 200) 
+				if(buttonTime > 100) 
 					buttonEvent = 2;
 				else
 					buttonEvent = 1;
@@ -39,7 +39,7 @@ interrupt isr(void) {
 		TMR1L = 0x58;
 	}
 
-	// Timer 2 interrupt
+	// Timer 2 interrupt at exactly 1Hz
 	if(PIR1 & 0x02) {
 		seconds++;
 		tick = 1;

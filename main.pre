@@ -554,7 +554,7 @@ buttonTime++;
 }
 else {
 if(buttonTime) {
-if(buttonTime > 200)
+if(buttonTime > 100)
 buttonEvent = 2;
 else
 buttonEvent = 1;
@@ -643,16 +643,29 @@ char numLookup[10] = {
 0b11011110
 };
 
+char numLookupDec[10] = {
+0b10111111,
+0b10000011,
+0b01110111,
+0b11010111,
+0b11001011,
+0b11011101,
+0b11111101,
+0b10000111,
+0b11111111,
+0b11011111
+};
+
 volatile unsigned char tick = 0;
 volatile unsigned char seconds = 0;
-volatile unsigned char minutes = 33;
+volatile unsigned char minutes = 0;
 volatile unsigned char buttonTime = 0;
 
 
 volatile unsigned char buttonEvent = 0;
 
 
-unsigned char hours = 17;
+unsigned char hours = 12;
 
 enum displayState {
 HOURONE = 0,
@@ -698,7 +711,7 @@ minutes = 0;
 if(hours > 23)
 hours = 0;
 
-# 91
+# 104
 RB7 = 0;
 
 switch(state) {
@@ -729,7 +742,7 @@ break;
 
 
 
-if(buttonEvent) {
+if(buttonEvent == 2) {
 buttonEvent = 0;
 clkState = SETHOUR;
 setTime();
@@ -739,16 +752,53 @@ setTime();
 
 void setTime() {
 while(clkState != RUNNING) {
+switch(clkState) {
+case SETHOUR:
+if(tick) {
+state++;
+PORTC = ~0x01;
 _delay((unsigned long)((100)*(32768/4000.0)));
-PORTC = ~numLookup[4];
-_delay((unsigned long)((100)*(32768/4000.0)));
-PORTC = ~numLookup[3];
-_delay((unsigned long)((100)*(32768/4000.0)));
-PORTC = ~numLookup[2];
-_delay((unsigned long)((100)*(32768/4000.0)));
-PORTC = ~numLookup[1];
+tick = 0;
+}
+if(state > 3)
+state = 0;
+if(buttonEvent == 2) {
+clkState = SETMIN;
+break;
+}
+if(buttonEvent == 1) {
+if(++hours > 23)
+hours = 0;
+}
+switch(state) {
+case HOURONE:
+PORTC = ~numLookupDec[(hours / 10)];
+break;
+case HOURTWO:
+PORTC = ~numLookupDec[(hours % 10)];
+break;
+case MINONE:
+PORTC = ~0x01;
+break;
+case MINTWO:
+PORTC = ~0x01;
+break;
+}
+break;
 
+case SETMIN:
+if(buttonEvent == 2)
 clkState = RUNNING;
+if(buttonEvent == 1) {
+if(++minutes > 59)
+minutes = 0;
+}
+PORTC = ~0x01;
+break;
+}
+buttonEvent = 0;
+
+# 200
 }
 }
 

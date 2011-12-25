@@ -25,16 +25,29 @@ char numLookup[10] = {
 	0b11011110   // 9
 };
 
+char numLookupDec[10] = {
+	0b10111111,  // 0
+	0b10000011,  // 1
+	0b01110111,  // 2
+	0b11010111,  // 3
+	0b11001011,  // 4
+	0b11011101,  // 5
+	0b11111101,  // 6
+	0b10000111,  // 7
+	0b11111111,  // 8
+	0b11011111   // 9
+};
+
 volatile unsigned char tick = 0;
 volatile unsigned char seconds = 0;
-volatile unsigned char minutes = 33;
+volatile unsigned char minutes = 0;
 volatile unsigned char buttonTime = 0;
 
 // contains button 'events'.  A byte set to 1 is a short press, and a byte set to 2 is a long press
 volatile unsigned char buttonEvent = 0;
 //volatile unsigned char buttonQueuePtr = 0;
 
-unsigned char hours = 17;
+unsigned char hours = 12;
 
 enum displayState {
 	HOURONE = 0,
@@ -118,7 +131,7 @@ void main(void) {
 
 		//RB7 = 1;
 		
-		if(buttonEvent) {
+		if(buttonEvent == 2) {
 			buttonEvent = 0;
 			clkState = SETHOUR;
 			setTime();
@@ -128,16 +141,62 @@ void main(void) {
 
 void setTime() {
 	while(clkState != RUNNING) {
+		switch(clkState) {
+			case SETHOUR:
+				if(tick) {
+					state++;
+					PORTC = ~0x01;
+					__delay_ms(100);
+					tick = 0;
+				}
+				if(state > 3)
+					state = 0;
+				if(buttonEvent == 2) {
+					clkState = SETMIN;
+					break;
+				}
+				if(buttonEvent == 1) {
+					if(++hours > 23)
+						hours = 0;
+				}
+				switch(state) {
+					case HOURONE:
+						PORTC = ~numLookupDec[(hours / 10)];
+						break;
+					case HOURTWO:
+						PORTC = ~numLookupDec[(hours % 10)];
+						break;
+					case MINONE:
+						PORTC = ~0x01;
+						break;
+					case MINTWO:
+						PORTC = ~0x01;
+						break;
+				}
+				break;
+
+			case SETMIN:
+				if(buttonEvent == 2)
+					clkState = RUNNING;
+				if(buttonEvent == 1) {
+					if(++minutes > 59)
+						minutes = 0;
+				}
+				PORTC = ~0x01;
+				break;
+		}		
+		buttonEvent = 0;
+
+		/*__delay_ms(100);
+		PORTC = ~numLookupDec[4];
 		__delay_ms(100);
-		PORTC = ~numLookup[4];
+		PORTC = ~numLookupDec[3];
 		__delay_ms(100);
-		PORTC = ~numLookup[3];
+		PORTC = ~numLookupDec[2];
 		__delay_ms(100);
-		PORTC = ~numLookup[2];
-		__delay_ms(100);
-		PORTC = ~numLookup[1];
+		PORTC = ~numLookupDec[1];
 		
-		clkState = RUNNING;
+		clkState = RUNNING; */
 	}
 }
 
