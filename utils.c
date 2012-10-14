@@ -38,7 +38,7 @@ interrupt isr(void) {
 	if(INTCON & 0b00000100) {
 		// Clear interrupt flag
 		T0IF = 0;
-		if(!RB6) {
+		if(!RA2) {
 			// button is pressed
 			if(buttonTime < 255) {
 				buttonTime++;
@@ -80,11 +80,11 @@ interrupt isr(void) {
 void init(void) {
 	// port directions: 1=input, 0=output
 	TRISA = 0b00000100;
-	TRISB = 0b01000000;
+	TRISB = 0b00000000;
 	TRISC = 0b00000000;
-	// Enable ADC channel 8 Disable channel 2
+	// Disable ADC inputs (all pins are digital)
 	ANSEL = 0b00000000;
-	ANSELH = 0b00000011;
+	ANSELH = 0b00000000;
 	// Clear the timers
 	TMR1H = 0xFF;
 	TMR1L = 0x58;
@@ -106,10 +106,9 @@ void init(void) {
 	INTCON = 0b11100000;
 	// TMR1 and TMR2 Interrupt enable
 	PIE1 = 0b00000011;
-	// Disable Weak Pull-ups
-	WPUA = 0x00;
-	// Enable weak pull-up for RB6
-	WPUB = 0b01000000;
+
+	// Enable weak pull-up for RA2
+	WPUA = 0b00000100;
 
 	// Disable comparators
 	CM1CON0 = 0x00;

@@ -1,7 +1,0 @@
-_init: CODE, 429 0 42
-_main: CODE, 210 0 116
-_isr: CODE, 378 0 51
-___lbdiv: CODE, 155 0 27
-_setTime: CODE, 13 0 142
-___lbmod: CODE, 182 0 28
-Total: 406

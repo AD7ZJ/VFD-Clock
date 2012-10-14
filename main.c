@@ -30,36 +30,35 @@
 #define _XTAL_FREQ 32768
 #include "utils.c"
 
-
 __CONFIG(LP & WDTDIS & PWRTEN & MCLRDIS & UNPROTECT & UNPROTECT & BORDIS & IESODIS & FCMDIS);
 
 // Function Prototypes
 void init(void);
 
 char numLookup[10] = {
-	0b10111110,  // 0
-	0b10000010,  // 1
-	0b01110110,  // 2
-	0b11010110,  // 3
-	0b11001010,  // 4
-	0b11011100,  // 5
-	0b11111100,  // 6
-	0b10000110,  // 7
-	0b11111110,  // 8
-	0b11011110   // 9
+	0b10111101,  // 0
+	0b00000101,  // 1
+	0b11110100,  // 2
+	0b11100101,  // 3
+	0b01001101,  // 4
+	0b11101001,  // 5
+	0b11111001,  // 6
+	0b10000101,  // 7
+	0b11111101,  // 8
+	0b11101101   // 9
 };
 
 char numLookupDec[10] = {
 	0b10111111,  // 0
-	0b10000011,  // 1
-	0b01110111,  // 2
-	0b11010111,  // 3
-	0b11001011,  // 4
-	0b11011101,  // 5
-	0b11111101,  // 6
+	0b00000111,  // 1
+	0b11110110,  // 2
+	0b11100111,  // 3
+	0b01001111,  // 4
+	0b11101011,  // 5
+	0b11111011,  // 6
 	0b10000111,  // 7
 	0b11111111,  // 8
-	0b11011111   // 9
+	0b11101111   // 9
 };
 
 volatile unsigned char tick = 0;
@@ -158,9 +157,9 @@ void setTime() {
 		switch(clkState) {
 			case SETHOUR:
 				if(tick) {
-					if(++state > 3)
+					if(++state > 2)
 						state = 0;
-					PORTC = ~0x01;
+					PORTC = ~0x02;
 					__delay_ms(100);
 					tick = 0;
 				}
@@ -184,19 +183,16 @@ void setTime() {
 						PORTC = ~numLookupDec[(hours % 10)];
 						break;
 					case MINONE:
-						PORTC = ~0x01;
-						break;
-					case MINTWO:
-						PORTC = ~0x01;
+						PORTC = ~0x02;
 						break;
 				}
 				break;
 
 			case SETMIN:
 				if(tick) {
-					if(++state > 5)
+					if(++state > 4)
 						state = 2;
-					PORTC = ~0x01;
+					PORTC = ~0x02;
 					__delay_ms(100);
 					tick = 0;
 				}
@@ -218,10 +214,7 @@ void setTime() {
 						PORTC = ~numLookupDec[(minutes % 10)];
 						break;
 					case OFF0:
-						PORTC = ~0x01;
-						break;
-					case OFF1:
-						PORTC = ~0x01;
+						PORTC = ~0x02;
 						break;
 				}
 				break;
